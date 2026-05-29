@@ -51,6 +51,8 @@ def generate_learning_plan(request: CreatePlanRequest) -> dict:
         ],
         "temperature": 0.3,
         "max_tokens": 4096,
+        "chat_template_kwargs": {"enable_thinking": False},
+        "response_format": {"type": "text"},
     }
 
     with httpx.Client(timeout=120.0) as client:

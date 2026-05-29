@@ -2,10 +2,6 @@
 
 FastAPI-бэкенд для сервиса, который генерирует персональные планы обучения с помощью LLM.
 
-## Статус
-
-MVP готов: API, база данных и LLM-интеграция с LM Studio работают.
-
 ## Стек
 
 - **FastAPI** — веб-фреймворк
@@ -15,28 +11,38 @@ MVP готов: API, база данных и LLM-интеграция с LM Stu
 
 ## Запуск локально
 
-### 1. Установить зависимости
+### 1. Создать виртуальное окружение и установить зависимости
 
+macOS / Linux:
 ```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Windows (PowerShell):
+```bash
+python -m venv venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
 ### 2. Настроить переменные окружения
 
-Скопировать `.env.example` в `.env` и заполнить:
-
-```bash
-cp .env.example .env
-```
+Скопировать `.env.example` в `.env` и заполнить своими данными:
 
 ```env
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+LM_STUDIO_URL=http://localhost:1234
+LM_API_TOKEN=lm-studio
+LM_MODEL=qwen/qwen3-8b
 ```
 
-### 3. Создать таблицу в Supabase
+### 3. Создать таблицы в Supabase
 
-Выполнить SQL из файла `supabase_schema.sql` в SQL-редакторе Supabase.
+Выполнить SQL из файла `supabase_schema.sql` в SQL-редакторе Supabase (один раз).
 
 ### 4. Запустить LM Studio
 
@@ -52,51 +58,63 @@ Swagger: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ## API
 
-### `POST /plans` — создать план
+### Plans
 
-**Request:**
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| `POST` | `/plans` | Создать учебный план |
+| `GET` | `/plans` | Список всех планов |
+| `GET` | `/plans?user_id=xxx` | Планы конкретного пользователя |
+| `GET` | `/plans/{plan_id}` | Один план по ID |
+| `PATCH` | `/plans/{plan_id}` | Редактировать план |
+| `DELETE` | `/plans/{plan_id}` | Удалить план |
+
+### Progress
+
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| `POST` | `/task-progress` | Сохранить прогресс по заданию |
+| `GET` | `/plans/{plan_id}/progress` | Прогресс по плану |
+
+### Пример запроса `POST /plans`
+
 ```json
 {
   "goal": "Изучить Python",
   "level": "beginner",
   "duration_weeks": 4,
   "time_per_week": 5,
-  "preferred_format": "practice"
+  "preferred_format": "practice",
+  "user_id": "user-1"
 }
 ```
-
-**Response:**
-```json
-{
-  "id": "uuid",
-  "title": "План обучения: Изучить Python",
-  "duration_weeks": 4,
-  "weeks": [
-    {
-      "week": 1,
-      "goal": "...",
-      "topics": ["..."],
-      "practice": ["..."]
-    }
-  ],
-  "created_at": "2026-..."
-}
-```
-
-### `GET /plans` — список всех планов
-
-### `GET /plans/{plan_id}` — один план по ID
 
 ## Структура проекта
 
 ```
 app/
-  main.py       # роуты FastAPI
-  schemas.py    # Pydantic-модели
-  db.py         # работа с Supabase
-  llm.py        # интеграция с LM Studio
+  main.py       — роуты FastAPI
+  schemas.py    — Pydantic-модели
+  db.py         — работа с Supabase
+  llm.py        — интеграция с LM Studio
 supabase_schema.sql
+tests/
 requirements.txt
 .env.example
+Dockerfile
 ```
 
+## Что реализовано
+
+- Генерация плана через LM Studio (локальная LLM)
+- Полный CRUD для планов (создание, чтение, редактирование, удаление)
+- Трекинг прогресса по заданиям
+- Фильтрация планов по `user_id`
+- Валидация входных данных через Pydantic
+- CORS для подключения frontend
+- Docker-образ
+
+## Что планируется
+
+- Авторизация (JWT)
+- Замена LM Studio на облачную LLM (OpenRouter / Claude API)
